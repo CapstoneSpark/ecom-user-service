@@ -71,8 +71,6 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponse(savedUser);
     }
 
-
-    
     @Override
     public LoginResponse loginUser(LoginRequest request) {
         // Authenticate user
@@ -89,7 +87,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // ✅ CHANGED: Pass userId to include in token
+        // Generate JWT token with userId
         String jwt = jwtUtils.generateJwtToken(authentication, user.getUserId());
 
         // Extract roles
@@ -127,6 +125,41 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.save(user);
 
         return mapToUserResponse(updatedUser);
+    }
+
+    @Override
+    public ApiResponse resetPassword(Simpleresetpasswordrequest request) {
+        // Find user by email - throws exception if not found
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Password reset successfully");
+    }
+
+    @Override
+    public ApiResponse changePassword(String email, ChangePasswordRequest changePasswordRequest) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        // Verify old password
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        // Check if new password is same as old password
+        if (changePasswordRequest.getOldPassword().equals(changePasswordRequest.getNewPassword())) {
+            throw new BadRequestException("New password cannot be the same as current password");
+        }
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Password changed successfully");
     }
 
     @Override
@@ -210,4 +243,14 @@ public class UserServiceImpl implements UserService {
                 user.getUpdatedAt()
         );
     }
+    @Override
+    public ApiResponse deleteUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+
+        userRepository.delete(user);
+
+        return new ApiResponse(true, "Account deleted successfully");
+    }
+
 }

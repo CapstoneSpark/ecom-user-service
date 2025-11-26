@@ -49,7 +49,7 @@ public class WebSecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/users/register", "/api/v1/users/login").permitAll()
+                .requestMatchers("/api/v1/users/register", "/api/v1/users/login","/api/v1/users/reset-password").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/users/*/roles").hasRole("ADMIN")
                 .requestMatchers("/api/v1/users").hasRole("ADMIN")

@@ -25,6 +25,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    // ==================== AUTHENTICATION ENDPOINTS ====================
+
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Register a new customer account")
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
@@ -38,6 +40,29 @@ public class UserController {
         LoginResponse loginResponse = userService.loginUser(loginRequest);
         return ResponseEntity.ok(loginResponse);
     }
+
+    // ==================== PASSWORD MANAGEMENT ENDPOINTS ====================
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password", description = "Reset password using email and new password")
+    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody Simpleresetpasswordrequest request) {
+        ApiResponse response = userService.resetPassword(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @Operation(summary = "Change password", description = "Change password for authenticated user")
+    public ResponseEntity<ApiResponse> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        ApiResponse response = userService.changePassword(email, changePasswordRequest);
+        return ResponseEntity.ok(response);
+    }
+
+    // ==================== PROFILE ENDPOINTS ====================
 
     @GetMapping("/profile")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
@@ -64,6 +89,8 @@ public class UserController {
         UserResponse userResponse = userService.updateUserProfile(email, updateProfileRequest);
         return ResponseEntity.ok(userResponse);
     }
+
+    // ==================== ADMIN ENDPOINTS ====================
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -110,4 +137,20 @@ public class UserController {
         UserResponse userResponse = userService.removeRoleFromUser(id, roleRequest);
         return ResponseEntity.ok(userResponse);
     }
+    
+    @DeleteMapping("/profile")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    @SecurityRequirement(name = "Bearer Authentication")
+    @Operation(summary = "Delete user account", description = "Delete current authenticated user")
+    public ResponseEntity<ApiResponse> deleteUserProfile() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        ApiResponse response = userService.deleteUser(email);
+
+        return ResponseEntity.ok(response);
+    }
+
+    
 }

@@ -13,6 +13,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.List;
+import java.util.stream.Collectors;
+
 
 /**
  * Auth Token Filter for User Service
@@ -40,27 +44,41 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
-                                    throws ServletException, IOException {
+            throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
+
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
+
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                
-                // Load user from database with roles
+                Long userId = jwtUtils.getUserIdFromJwtToken(jwt);
+
+                // 🔥 Extract roles from JWT instead of DB
+                List<String> roles = jwtUtils.getRolesFromJwtToken(jwt);
+
+                // Convert roles → GrantedAuthority
+                List<SimpleGrantedAuthority> authorities = roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
+
+                // Optional: still load full user details
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                
+
                 UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                        userDetails, 
-                        null, 
-                        userDetails.getAuthorities()
-                    );
-                    
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                authorities // 🔥 USE JWT ROLES HERE
+                        );
+
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
+
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e);
+            logger.error("Cannot set user authentication: {}"+ e.getMessage());
         }
+
         filterChain.doFilter(request, response);
     }
+
 }
