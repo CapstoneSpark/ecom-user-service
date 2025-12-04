@@ -12,7 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import io.github.cdimascio.dotenv.Dotenv;
+//import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -26,16 +26,16 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtils {
 
-//    @Value("${app.jwtSecret}")
-//    private String jwtSecret;
-//
-//    @Value("${app.jwtExpirationMs}")
-//    private long jwtExpirationMs;
-	
-	private final Dotenv dotenv = Dotenv.load();
+    @Value("${app.jwtSecret}")
+    private String jwtSecret;
 
-    private final String jwtSecret = dotenv.get("JWT_SECRET");
-    private final long jwtExpirationMs = Long.parseLong(dotenv.get("JWT_EXPIRATION"));
+    @Value("${app.jwtExpirationMs}")
+    private long jwtExpirationMs;
+	
+//	private final Dotenv dotenv = Dotenv.load();
+//
+//    private final String jwtSecret = dotenv.get("JWT_SECRET");
+//    private final long jwtExpirationMs = Long.parseLong(dotenv.get("JWT_EXPIRATION"));
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
